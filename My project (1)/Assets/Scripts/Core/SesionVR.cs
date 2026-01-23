@@ -113,15 +113,47 @@ public class SesionVR : MonoBehaviour
     }
     
     /// <summary>
+    /// Se llama cuando un estímulo expira (desaparece sin ser clickeado)
+    /// </summary>
+    public void RegistrarExpiracion(TipoEstimulo tipo)
+    {
+        if (!sesionActiva) return;
+
+        bool fueCorrecta;
+        float tiempoReaccion = gestorDificultad.ObtenerVidaUtilActual();
+
+        if (tipo == TipoEstimulo.Negro)
+        {
+            // Si era negro y NO se clickeó, es CORRECTO
+            fueCorrecta = true;
+            Debug.Log("[SesionVR] Estímulo NEGRO expiró correctamente (No interacción)");
+        }
+        else
+        {
+            // Si era blanco y NO se clickeó, es INCORRECTO (Miss)
+            fueCorrecta = false;
+            Debug.Log("[SesionVR] Estímulo BLANCO expiró incorrectamente (Miss)");
+        }
+
+        ProcesarResultado(tiempoReaccion, fueCorrecta);
+    }
+
+    /// <summary>
     /// Registra una interacción del usuario con un estímulo
-    /// Este es el método central que implementa el flujo completo
     /// </summary>
     public void RegistrarInteraccion(float tiempoReaccion, bool fueCorrecta)
     {
         if (!sesionActiva) return;
         
         Debug.Log($"[SesionVR] Interacción registrada - Tiempo: {tiempoReaccion:F2}s, Correcta: {fueCorrecta}");
-        
+        ProcesarResultado(tiempoReaccion, fueCorrecta);
+    }
+
+    /// <summary>
+    /// Método central para procesar resultados de interacciones o expiraciones
+    /// </summary>
+    private void ProcesarResultado(float tiempoReaccion, bool fueCorrecta)
+    {
         // 1. Crear y almacenar métrica
         Metrica metrica = new Metrica(tiempoReaccion, fueCorrecta);
         metricasSesion.Add(metrica);
@@ -143,7 +175,6 @@ public class SesionVR : MonoBehaviour
         );
         
         usuario.NivelAtencionActual = nivelClasificado;
-        Debug.Log($"[SesionVR] Nivel de atención clasificado: {nivelClasificado}");
         
         // 5. Mostrar métricas acumuladas
         interfazRetroalimentacion.ActualizarMetricas(
@@ -158,6 +189,9 @@ public class SesionVR : MonoBehaviour
         
         // 7. Generar siguiente estímulo después de un retardo
         float intervalo = gestorDificultad.ObtenerIntervaloActual() + retardoEntreEstimulos;
+        
+        // Cancelar cualquier invocación previa para evitar múltiples estímulos
+        CancelInvoke(nameof(GenerarSiguienteEstimulo));
         Invoke(nameof(GenerarSiguienteEstimulo), intervalo);
     }
     

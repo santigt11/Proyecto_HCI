@@ -8,6 +8,7 @@ public class GestorDificultad : MonoBehaviour
     [Header("Parámetros de Dificultad")]
     public float velocidadEstimulo = 1f;
     public float intervaloGeneracion = 2f;
+    public float vidaUtilEstimulo = 4f;
     public int maxEstimulosSimultaneos = 1;
     
     [Header("Configuración de Transición")]
@@ -15,11 +16,13 @@ public class GestorDificultad : MonoBehaviour
     
     private float velocidadObjetivo;
     private float intervaloObjetivo;
+    private float vidaUtilObjetivo;
     
     private void Start()
     {
         velocidadObjetivo = velocidadEstimulo;
         intervaloObjetivo = intervaloGeneracion;
+        vidaUtilObjetivo = vidaUtilEstimulo;
     }
     
     /// <summary>
@@ -34,6 +37,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad reducida: más tiempo, menos estímulos
                 velocidadObjetivo = 0.5f;
                 intervaloObjetivo = 3f;
+                vidaUtilObjetivo = 5.0f;
                 maxEstimulosSimultaneos = 1;
                 Debug.Log("[Dificultad] Ajustada a BAJA - Más tiempo para reaccionar");
                 break;
@@ -42,6 +46,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad balanceada
                 velocidadObjetivo = 1f;
                 intervaloObjetivo = 2f;
+                vidaUtilObjetivo = 3.5f;
                 maxEstimulosSimultaneos = 1;
                 Debug.Log("[Dificultad] Ajustada a MEDIA - Parámetros balanceados");
                 break;
@@ -50,6 +55,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad aumentada: menos tiempo, más estímulos
                 velocidadObjetivo = 1.5f;
                 intervaloObjetivo = 1.5f;
+                vidaUtilObjetivo = 2.0f;
                 maxEstimulosSimultaneos = 2;
                 Debug.Log("[Dificultad] Ajustada a ALTA - Mayor desafío");
                 break;
@@ -61,6 +67,7 @@ public class GestorDificultad : MonoBehaviour
         // Transición suave hacia los valores objetivo
         velocidadEstimulo = Mathf.Lerp(velocidadEstimulo, velocidadObjetivo, suavidadTransicion * Time.deltaTime);
         intervaloGeneracion = Mathf.Lerp(intervaloGeneracion, intervaloObjetivo, suavidadTransicion * Time.deltaTime);
+        vidaUtilEstimulo = Mathf.Lerp(vidaUtilEstimulo, vidaUtilObjetivo, suavidadTransicion * Time.deltaTime);
     }
     
     /// <summary>
@@ -69,5 +76,13 @@ public class GestorDificultad : MonoBehaviour
     public float ObtenerIntervaloActual()
     {
         return intervaloGeneracion;
+    }
+
+    /// <summary>
+    /// Obtiene el tiempo de vida actual de los estímulos
+    /// </summary>
+    public float ObtenerVidaUtilActual()
+    {
+        return vidaUtilEstimulo;
     }
 }

@@ -46,7 +46,14 @@ public class EstimuloManager : MonoBehaviour
         Estimulo estimulo = estimuloObj.GetComponent<Estimulo>();
         if (estimulo != null)
         {
-            estimulo.Tipo = tipo;
+            // Obtener tiempo de vida actual del gestor de dificultad
+            float vidaUtil = 4f;
+            if (SesionVR.Instance != null && SesionVR.Instance.GetComponent<GestorDificultad>() != null)
+            {
+                vidaUtil = SesionVR.Instance.GetComponent<GestorDificultad>().ObtenerVidaUtilActual();
+            }
+
+            estimulo.Configurar(tipo, vidaUtil);
         }
         else
         {
@@ -59,7 +66,7 @@ public class EstimuloManager : MonoBehaviour
             estimuloObj.transform.LookAt(Camera.main.transform);
         }
         
-        Debug.Log($"[EstimuloManager] Generado estímulo {tipo} en posición {randomPos}");
+        Debug.Log($"[EstimuloManager] Generado estímulo {tipo} con vida útil {estimulo?.VidaUtil:F1}s en posición {randomPos}");
     }
     
     /// <summary>

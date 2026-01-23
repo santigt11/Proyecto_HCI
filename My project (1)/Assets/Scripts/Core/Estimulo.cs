@@ -16,17 +16,59 @@ public class Estimulo : MonoBehaviour
 {
     public TipoEstimulo Tipo { get; set; }
     public float TiempoAparicion { get; private set; }
+    public float VidaUtil { get; private set; } = 5f; // Valor por defecto
     
+    private bool interactuado = false;
+
+    /// <summary>
+    /// Configura el estímulo con su tipo y tiempo de vida
+    /// </summary>
+    public void Configurar(TipoEstimulo tipo, float vidaUtil)
+    {
+        Tipo = tipo;
+        VidaUtil = vidaUtil;
+    }
+
     private void Start()
     {
         TiempoAparicion = Time.time;
     }
-    
+
+    private void Update()
+    {
+        if (interactuado) return;
+
+        // Verificar si el estímulo ha expirado
+        if (Time.time - TiempoAparicion > VidaUtil)
+        {
+            Expirar();
+        }
+    }
+
+    /// <summary>
+    /// Se llama cuando el estímulo desaparece sin interacción
+    /// </summary>
+    private void Expirar()
+    {
+        interactuado = true;
+        
+        // Notificar a la sesión que el estímulo expiró
+        if (SesionVR.Instance != null)
+        {
+            SesionVR.Instance.RegistrarExpiracion(Tipo);
+        }
+        
+        Destroy(gameObject);
+    }
+
     /// <summary>
     /// Se llama cuando el usuario interactúa con este estímulo
     /// </summary>
     public void OnInteraccion()
     {
+        if (interactuado) return;
+        interactuado = true;
+
         float tiempoReaccion = Time.time - TiempoAparicion;
         bool esCorrecta = (Tipo == TipoEstimulo.Blanco);
         
