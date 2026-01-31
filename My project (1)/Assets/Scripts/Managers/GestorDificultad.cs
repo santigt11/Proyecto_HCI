@@ -37,7 +37,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad reducida: más tiempo, menos estímulos
                 velocidadObjetivo = 0.5f;
                 intervaloObjetivo = 3f;
-                vidaUtilObjetivo = 5.0f;
+                vidaUtilObjetivo = 3.0f; // Reducido de 5.0 a 3.0 segundos
                 maxEstimulosSimultaneos = 1;
                 Debug.Log("[Dificultad] Ajustada a BAJA - Más tiempo para reaccionar");
                 break;
@@ -46,7 +46,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad balanceada
                 velocidadObjetivo = 1f;
                 intervaloObjetivo = 2f;
-                vidaUtilObjetivo = 3.5f;
+                vidaUtilObjetivo = 2.0f; // Reducido de 3.5 a 2.0 segundos
                 maxEstimulosSimultaneos = 1;
                 Debug.Log("[Dificultad] Ajustada a MEDIA - Parámetros balanceados");
                 break;
@@ -55,7 +55,7 @@ public class GestorDificultad : MonoBehaviour
                 // Dificultad aumentada: menos tiempo, más estímulos
                 velocidadObjetivo = 1.5f;
                 intervaloObjetivo = 1.5f;
-                vidaUtilObjetivo = 2.0f;
+                vidaUtilObjetivo = 1.5f; // Reducido de 2.0 a 1.5 segundos
                 maxEstimulosSimultaneos = 2;
                 Debug.Log("[Dificultad] Ajustada a ALTA - Mayor desafío");
                 break;

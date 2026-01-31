@@ -72,10 +72,26 @@ public class Estimulo : MonoBehaviour
         float tiempoReaccion = Time.time - TiempoAparicion;
         bool esCorrecta = (Tipo == TipoEstimulo.Blanco);
         
+        // Activar retroalimentación háptica según el tipo de estímulo
+        if (HapticFeedbackManager.Instance != null)
+        {
+            if (esCorrecta)
+            {
+                // Vibración leve para respuesta correcta (blanco)
+                HapticFeedbackManager.Instance.VibracionCorrecta();
+            }
+            else
+            {
+                // Vibración intensa para respuesta incorrecta (negro)
+                HapticFeedbackManager.Instance.VibracionIncorrecta();
+            }
+        }
+        
         // Registrar la interacción en la sesión
         SesionVR.Instance.RegistrarInteraccion(tiempoReaccion, esCorrecta);
         
         // Destruir el estímulo
         Destroy(gameObject);
     }
+
 }

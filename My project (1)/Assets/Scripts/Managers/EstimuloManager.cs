@@ -16,7 +16,15 @@ public class EstimuloManager : MonoBehaviour
     [SerializeField] private float alturaMaxima = 3f;
     
     [Header("Probabilidades")]
-    [SerializeField] [Range(0f, 1f)] private float probabilidadBlanco = 0.5f;
+    [SerializeField] [Range(0f, 1f)] private float probabilidadBlanco = 0.6f;
+    
+    [Header("Audio")]
+    [SerializeField] private AudioClip sonidoEstimuloBlanco;
+    [SerializeField] private AudioClip sonidoEstimuloNegro;
+    [Tooltip("Distancia mínima donde el sonido está a volumen máximo")]
+    [SerializeField] private float minDistance = 1f;
+    [Tooltip("Distancia máxima donde el sonido se escucha")]
+    [SerializeField] private float maxDistance = 10f;
     
     /// <summary>
     /// Genera un nuevo estímulo en una posición aleatoria
@@ -66,7 +74,36 @@ public class EstimuloManager : MonoBehaviour
             estimuloObj.transform.LookAt(Camera.main.transform);
         }
         
+        // Agregar y configurar AudioSource 3D en el estímulo
+        ConfigurarAudio3D(estimuloObj, tipo);
+        
         Debug.Log($"[EstimuloManager] Generado estímulo {tipo} con vida útil {estimulo?.VidaUtil:F1}s en posición {randomPos}");
+    }
+    
+    /// <summary>
+    /// Configura un AudioSource 3D en el estímulo y reproduce el sonido correspondiente
+    /// </summary>
+    private void ConfigurarAudio3D(GameObject estimuloObj, TipoEstimulo tipo)
+    {
+        // Seleccionar el clip según el tipo
+        AudioClip clip = (tipo == TipoEstimulo.Blanco) ? sonidoEstimuloBlanco : sonidoEstimuloNegro;
+        
+        if (clip == null) return; // No hay sonido asignado
+        
+        // Agregar AudioSource al estímulo
+        AudioSource audioSource = estimuloObj.AddComponent<AudioSource>();
+        
+        // Configurar como audio 3D espacial
+        audioSource.clip = clip;
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f; // 1 = 3D completo, 0 = 2D
+        audioSource.minDistance = minDistance;
+        audioSource.maxDistance = maxDistance;
+        audioSource.rolloffMode = AudioRolloffMode.Linear;
+        audioSource.dopplerLevel = 0f; // Sin efecto Doppler para estímulos estáticos
+        
+        // Reproducir el sonido
+        audioSource.Play();
     }
     
     /// <summary>
@@ -74,7 +111,7 @@ public class EstimuloManager : MonoBehaviour
     /// </summary>
     public void LimpiarEstimulos()
     {
-        Estimulo[] estimulos = FindObjectsOfType<Estimulo>();
+        Estimulo[] estimulos = FindObjectsByType<Estimulo>(FindObjectsSortMode.None);
         foreach (Estimulo estimulo in estimulos)
         {
             Destroy(estimulo.gameObject);

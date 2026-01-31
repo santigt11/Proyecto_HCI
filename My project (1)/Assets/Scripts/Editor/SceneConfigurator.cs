@@ -186,8 +186,8 @@ public class SceneConfigurator : EditorWindow
         GameObject textoNivel = CreateTextMeshPro("TextoNivelAtencion", "Nivel de Atención: Medio", metricsPanel.transform);
         
         // Crear feedback visual
-        GameObject feedbackCorrecto = CreateFeedbackObject("FeedbackCorrecto", "✓ CORRECTO", Color.green, canvasObj.transform);
-        GameObject feedbackIncorrecto = CreateFeedbackObject("FeedbackIncorrecto", "✗ INCORRECTO", Color.red, canvasObj.transform);
+        GameObject feedbackCorrecto = CreateFeedbackObject("FeedbackCorrecto", "CORRECTO", Color.green, canvasObj.transform);
+        GameObject feedbackIncorrecto = CreateFeedbackObject("FeedbackIncorrecto", "INCORRECTO", Color.red, canvasObj.transform);
         
         feedbackCorrecto.SetActive(false);
         feedbackIncorrecto.SetActive(false);
@@ -203,7 +203,7 @@ public class SceneConfigurator : EditorWindow
         soInterfaz.ApplyModifiedProperties();
         
         // Asignar a SesionVR
-        SesionVR sesionVR = GameObject.FindObjectOfType<SesionVR>();
+        SesionVR sesionVR = GameObject.FindFirstObjectByType<SesionVR>();
         if (sesionVR != null)
         {
             SerializedObject soSesionVR = new SerializedObject(sesionVR);

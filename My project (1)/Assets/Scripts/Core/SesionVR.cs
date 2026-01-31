@@ -150,6 +150,18 @@ public class SesionVR : MonoBehaviour
     }
 
     /// <summary>
+    /// Registra un click al vacío (no apuntaba a ningún estímulo)
+    /// </summary>
+    public void RegistrarClickVacio()
+    {
+        if (!sesionActiva) return;
+        
+        Debug.Log("[SesionVR] Click al vacío registrado como error");
+        // Registrar como error con tiempo de reacción 0 (no hubo estímulo)
+        ProcesarResultado(0f, false);
+    }
+
+    /// <summary>
     /// Método central para procesar resultados de interacciones o expiraciones
     /// </summary>
     private void ProcesarResultado(float tiempoReaccion, bool fueCorrecta)
@@ -219,13 +231,16 @@ public class SesionVR : MonoBehaviour
     }
     
     /// <summary>
-    /// Calcula el promedio de tiempo de reacción
+    /// Calcula el promedio de tiempo de reacción (solo respuestas correctas)
     /// </summary>
     private float CalcularPromedioTiempoReaccion()
     {
-        if (metricasSesion.Count == 0) return 0f;
+        // Filtrar solo las métricas correctas
+        var metricasCorrectas = metricasSesion.Where(m => m.FueCorrecta).ToList();
         
-        return metricasSesion.Average(m => m.TiempoReaccion);
+        if (metricasCorrectas.Count == 0) return 0f;
+        
+        return metricasCorrectas.Average(m => m.TiempoReaccion);
     }
     
     /// <summary>
