@@ -120,18 +120,20 @@ public class SesionVR : MonoBehaviour
         if (!sesionActiva) return;
 
         bool fueCorrecta;
-        float tiempoReaccion = gestorDificultad.ObtenerVidaUtilActual();
+        float tiempoReaccion;
 
         if (tipo == TipoEstimulo.Negro)
         {
             // Si era negro y NO se clickeó, es CORRECTO
             fueCorrecta = true;
+            tiempoReaccion = 0f; // No contar tiempo para estímulos negros
             Debug.Log("[SesionVR] Estímulo NEGRO expiró correctamente (No interacción)");
         }
         else
         {
             // Si era blanco y NO se clickeó, es INCORRECTO (Miss)
             fueCorrecta = false;
+            tiempoReaccion = gestorDificultad.ObtenerVidaUtilActual(); // Tiempo máximo como penalización
             Debug.Log("[SesionVR] Estímulo BLANCO expiró incorrectamente (Miss)");
         }
 
@@ -174,32 +176,35 @@ public class SesionVR : MonoBehaviour
         // 2. Mostrar retroalimentación inmediata
         interfazRetroalimentacion.MostrarResultadoInmediato(fueCorrecta);
         
-        // 3. Calcular métricas agregadas
+        // 3. Calcular métricas agregadas (para mostrar en UI)
         float precision = CalcularPrecision();
         float tiempoPromedio = CalcularPromedioTiempoReaccion();
         int numeroErrores = CalcularNumeroErrores();
         
-        // 4. Clasificar nivel de atención con IA
+        // 4. Calcular métricas recientes (para IA - últimas 5 interacciones)
+        float tiempoPromedioReciente = CalcularPromedioTiempoReaccionReciente(5);
+        
+        // 5. Clasificar nivel de atención con IA usando métricas recientes
         NivelAtencion nivelClasificado = arbolDecision.ClasificarAtencion(
             precision,
-            tiempoPromedio,
+            tiempoPromedioReciente, // Usar tiempo reciente en lugar del promedio total
             numeroErrores
         );
         
         usuario.NivelAtencionActual = nivelClasificado;
         
-        // 5. Mostrar métricas acumuladas
+        // 6. Mostrar métricas acumuladas (UI muestra el promedio total)
         interfazRetroalimentacion.ActualizarMetricas(
             precision,
             numeroErrores,
-            tiempoPromedio,
+            tiempoPromedio, // UI muestra el promedio total histórico
             nivelClasificado
         );
         
-        // 6. Ajustar dificultad basándose en el nivel de atención
+        // 7. Ajustar dificultad basándose en el nivel de atención
         gestorDificultad.AjustarDificultad(nivelClasificado);
         
-        // 7. Generar siguiente estímulo después de un retardo
+        // 8. Generar siguiente estímulo después de un retardo
         float intervalo = gestorDificultad.ObtenerIntervaloActual() + retardoEntreEstimulos;
         
         // Cancelar cualquier invocación previa para evitar múltiples estímulos
@@ -235,12 +240,41 @@ public class SesionVR : MonoBehaviour
     /// </summary>
     private float CalcularPromedioTiempoReaccion()
     {
-        // Filtrar solo las métricas correctas
-        var metricasCorrectas = metricasSesion.Where(m => m.FueCorrecta).ToList();
+        // Filtrar solo las métricas correctas con tiempo > 0 (excluir estímulos negros)
+        var metricasCorrectas = metricasSesion
+            .Where(m => m.FueCorrecta && m.TiempoReaccion > 0f)
+            .ToList();
         
         if (metricasCorrectas.Count == 0) return 0f;
         
         return metricasCorrectas.Average(m => m.TiempoReaccion);
+    }
+    
+    /// <summary>
+    /// Calcula el promedio de tiempo de reacción de las últimas N interacciones correctas
+    /// Usado para la IA para tener una ventana deslizante de rendimiento reciente
+    /// </summary>
+    private float CalcularPromedioTiempoReaccionReciente(int cantidadUltimas)
+    {
+        // Filtrar solo las métricas correctas con tiempo > 0 (excluir estímulos negros)
+        var metricasCorrectas = metricasSesion
+            .Where(m => m.FueCorrecta && m.TiempoReaccion > 0f)
+            .ToList();
+        
+        if (metricasCorrectas.Count == 0) return 0f;
+        
+        // Tomar las últimas N métricas correctas
+        var metricasRecientes = metricasCorrectas
+            .Skip(Mathf.Max(0, metricasCorrectas.Count - cantidadUltimas))
+            .ToList();
+        
+        if (metricasRecientes.Count == 0) return 0f;
+        
+        float promedio = metricasRecientes.Average(m => m.TiempoReaccion);
+        
+        Debug.Log($"[SesionVR] Tiempo promedio reciente ({metricasRecientes.Count} últimas): {promedio:F2}s");
+        
+        return promedio;
     }
     
     /// <summary>

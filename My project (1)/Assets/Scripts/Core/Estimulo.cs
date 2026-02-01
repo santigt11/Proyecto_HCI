@@ -72,6 +72,13 @@ public class Estimulo : MonoBehaviour
         float tiempoReaccion = Time.time - TiempoAparicion;
         bool esCorrecta = (Tipo == TipoEstimulo.Blanco);
         
+        // Solo registrar tiempo de reacción para estímulos blancos
+        // Los estímulos negros no requieren velocidad, solo evitarlos
+        if (!esCorrecta)
+        {
+            tiempoReaccion = 0f; // No contar tiempo para estímulos negros
+        }
+        
         // Activar retroalimentación háptica según el tipo de estímulo
         if (HapticFeedbackManager.Instance != null)
         {

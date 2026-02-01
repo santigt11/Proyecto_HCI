@@ -2,60 +2,85 @@ using UnityEngine;
 
 /// <summary>
 /// Árbol de Decisión para clasificar el nivel de atención del usuario
-/// Implementación supervisada basada en métricas de desempeño
+/// Implementación con estructura real de árbol usando nodos
 /// </summary>
 public class ArbolDecision : MonoBehaviour
 {
     [Header("Umbrales de Clasificación")]
     [SerializeField] private float umbralPrecisionAlta = 0.8f;
     [SerializeField] private float umbralPrecisionMedia = 0.5f;
-    [SerializeField] private float umbralTiempoRapido = 1.0f;
+    [SerializeField] private float umbralTiempoRapido = 1.4f;
     [SerializeField] private int umbralErroresTolerables = 3;
+    
+    // Nodo raíz del árbol
+    private NodoDecision nodoRaiz;
+    
+    private void Awake()
+    {
+        ConstruirArbol();
+    }
+    
+    /// <summary>
+    /// Construye la estructura del árbol de decisión
+    /// </summary>
+    private void ConstruirArbol()
+    {
+        // Nodos hoja (resultados finales)
+        NodoHoja nodoAlto = new NodoHoja(NivelAtencion.Alto);
+        NodoHoja nodoMedio1 = new NodoHoja(NivelAtencion.Medio);
+        NodoHoja nodoMedio2 = new NodoHoja(NivelAtencion.Medio);
+        NodoHoja nodoBajo1 = new NodoHoja(NivelAtencion.Bajo);
+        NodoHoja nodoBajo2 = new NodoHoja(NivelAtencion.Bajo);
+        
+        // Nivel 3: Nodo de errores (para precisión media)
+        NodoDecision nodoErrores = new NodoDecision(
+            metrica => metrica.numeroErrores <= umbralErroresTolerables,
+            nodoMedio2,  // <= 3 errores -> Medio
+            nodoBajo1    // > 3 errores -> Bajo
+        );
+        
+        // Nivel 2: Nodo de tiempo de reacción (para precisión alta)
+        NodoDecision nodoTiempo = new NodoDecision(
+            metrica => metrica.tiempoReaccionPromedio <= umbralTiempoRapido,
+            nodoAlto,    // Tiempo rápido -> Alto
+            nodoMedio1   // Tiempo lento -> Medio
+        );
+        
+        // Nivel 2: Nodo de precisión media
+        NodoDecision nodoPrecisionMedia = new NodoDecision(
+            metrica => metrica.precision >= umbralPrecisionMedia,
+            nodoErrores, // Precisión media -> evaluar errores
+            nodoBajo2    // Precisión baja -> Bajo
+        );
+        
+        // Nivel 1: Nodo raíz - Precisión alta
+        nodoRaiz = new NodoDecision(
+            metrica => metrica.precision >= umbralPrecisionAlta,
+            nodoTiempo,          // Precisión alta -> evaluar tiempo
+            nodoPrecisionMedia   // Precisión no alta -> evaluar precisión media
+        );
+        
+        Debug.Log("[ArbolDecision] Árbol construido con estructura de nodos");
+    }
     
     /// <summary>
     /// Clasifica el nivel de atención basado en las métricas del usuario
-    /// Este es un árbol de decisión supervisado, no simples if-else
+    /// Recorre el árbol desde la raíz hasta una hoja
     /// </summary>
-    /// <param name="precision">Precisión del usuario (0-1)</param>
-    /// <param name="tiempoReaccionPromedio">Tiempo promedio de reacción en segundos</param>
-    /// <param name="numeroErrores">Cantidad de errores cometidos</param>
-    /// <returns>Nivel de atención clasificado</returns>
     public NivelAtencion ClasificarAtencion(float precision, float tiempoReaccionPromedio, int numeroErrores)
     {
-        // Nodo raíz: Evaluar precisión
-        if (precision >= umbralPrecisionAlta)
+        MetricasClasificacion metricas = new MetricasClasificacion
         {
-            // Rama de alta precisión
-            if (tiempoReaccionPromedio <= umbralTiempoRapido)
-            {
-                // Alta precisión + tiempo rápido = Atención Alta
-                return NivelAtencion.Alto;
-            }
-            else
-            {
-                // Alta precisión pero tiempo lento = Atención Media
-                return NivelAtencion.Medio;
-            }
-        }
-        else if (precision >= umbralPrecisionMedia)
-        {
-            // Rama de precisión media
-            if (numeroErrores <= umbralErroresTolerables)
-            {
-                // Precisión media con pocos errores = Atención Media
-                return NivelAtencion.Medio;
-            }
-            else
-            {
-                // Precisión media con muchos errores = Atención Baja
-                return NivelAtencion.Bajo;
-            }
-        }
-        else
-        {
-            // Rama de baja precisión = Atención Baja
-            return NivelAtencion.Bajo;
-        }
+            precision = precision,
+            tiempoReaccionPromedio = tiempoReaccionPromedio,
+            numeroErrores = numeroErrores
+        };
+        
+        NivelAtencion resultado = nodoRaiz.Evaluar(metricas);
+        
+        Debug.Log($"[ArbolDecision] Clasificación: {resultado} (P:{precision:F2}, T:{tiempoReaccionPromedio:F2}s, E:{numeroErrores})");
+        
+        return resultado;
     }
     
     /// <summary>
@@ -74,5 +99,72 @@ public class ArbolDecision : MonoBehaviour
         Debug.Log($"      SI -> MEDIO");
         Debug.Log($"      NO -> BAJO");
         Debug.Log($"    NO -> BAJO");
+    }
+}
+
+/// <summary>
+/// Estructura para pasar métricas entre nodos
+/// </summary>
+public struct MetricasClasificacion
+{
+    public float precision;
+    public float tiempoReaccionPromedio;
+    public int numeroErrores;
+}
+
+/// <summary>
+/// Clase base abstracta para nodos del árbol
+/// </summary>
+public abstract class NodoArbol
+{
+    public abstract NivelAtencion Evaluar(MetricasClasificacion metricas);
+}
+
+/// <summary>
+/// Nodo de decisión (nodo interno del árbol)
+/// Evalúa una condición y delega a sus hijos
+/// </summary>
+public class NodoDecision : NodoArbol
+{
+    private System.Func<MetricasClasificacion, bool> condicion;
+    private NodoArbol hijoVerdadero;
+    private NodoArbol hijoFalso;
+    
+    public NodoDecision(System.Func<MetricasClasificacion, bool> condicion, NodoArbol hijoVerdadero, NodoArbol hijoFalso)
+    {
+        this.condicion = condicion;
+        this.hijoVerdadero = hijoVerdadero;
+        this.hijoFalso = hijoFalso;
+    }
+    
+    public override NivelAtencion Evaluar(MetricasClasificacion metricas)
+    {
+        if (condicion(metricas))
+        {
+            return hijoVerdadero.Evaluar(metricas);
+        }
+        else
+        {
+            return hijoFalso.Evaluar(metricas);
+        }
+    }
+}
+
+/// <summary>
+/// Nodo hoja (nodo terminal del árbol)
+/// Retorna un resultado final
+/// </summary>
+public class NodoHoja : NodoArbol
+{
+    private NivelAtencion resultado;
+    
+    public NodoHoja(NivelAtencion resultado)
+    {
+        this.resultado = resultado;
+    }
+    
+    public override NivelAtencion Evaluar(MetricasClasificacion metricas)
+    {
+        return resultado;
     }
 }
