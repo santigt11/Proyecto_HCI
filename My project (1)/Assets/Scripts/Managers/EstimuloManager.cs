@@ -12,11 +12,11 @@ public class EstimuloManager : MonoBehaviour
     [Header("Configuración de Spawn")]
     [SerializeField] private Transform spawnArea;
     [SerializeField] private float spawnRadius = 3f;
-    [SerializeField] private float alturaMinima = 1f;
-    [SerializeField] private float alturaMaxima = 3f;
+    [SerializeField] private float alturaMinima = 11f;
+    [SerializeField] private float alturaMaxima = 14f;
     
     [Header("Probabilidades")]
-    [SerializeField] [Range(0f, 1f)] private float probabilidadBlanco = 0.6f;
+    [SerializeField] [Range(0f, 1f)] private float probabilidadBlanco = 0.65f;
     
     [Header("Audio")]
     [SerializeField] private AudioClip sonidoEstimuloBlanco;
