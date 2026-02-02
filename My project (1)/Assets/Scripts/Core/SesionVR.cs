@@ -15,6 +15,7 @@ public class SesionVR : MonoBehaviour
     [SerializeField] private ArbolDecision arbolDecision;
     [SerializeField] private GestorDificultad gestorDificultad;
     [SerializeField] private InterfazRetroalimentacion interfazRetroalimentacion;
+    [SerializeField] private ExportadorDatosCSV exportadorCSV;
     
     [Header("Configuración de Sesión")]
     [SerializeField] private bool iniciarAutomaticamente = true;
@@ -35,6 +36,16 @@ public class SesionVR : MonoBehaviour
         {
             Destroy(gameObject);
             return;
+        }
+    }
+    
+    private void OnDestroy()
+    {
+        // Exportar datos automáticamente al salir del Play Mode
+        if (sesionActiva && metricasSesion.Count > 0)
+        {
+            Debug.Log("[SesionVR] Saliendo del Play Mode - Exportando datos automáticamente...");
+            DetenerSesion();
         }
     }
     
@@ -110,6 +121,13 @@ public class SesionVR : MonoBehaviour
         sesionActiva = false;
         CancelInvoke(nameof(GenerarSiguienteEstimulo));
         estimuloManager.LimpiarEstimulos();
+        
+        // Exportar datos de la sesión a CSV
+        if (exportadorCSV != null && metricasSesion.Count > 0)
+        {
+            exportadorCSV.ExportarSesion(usuario, metricasSesion, usuario.NivelAtencionActual);
+            Debug.Log($"[SesionVR] Sesión exportada: {metricasSesion.Count} métricas");
+        }
     }
     
     /// <summary>

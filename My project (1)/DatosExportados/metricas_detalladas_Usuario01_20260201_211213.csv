@@ -1,0 +1,6 @@
+NumeroInteraccion,TiempoReaccion,FueCorrecta,Timestamp
+1,0,0000,False,2026-02-01 21:11:59
+2,0,0000,False,2026-02-01 21:11:59
+3,2,1850,True,2026-02-01 21:12:01
+4,1,5400,True,2026-02-01 21:12:06
+5,1,6638,True,2026-02-01 21:12:11

@@ -1,0 +1,13 @@
+{
+    "mcpServers": {
+        "coplay-mcp": {
+            "disabled": false,
+            "command": "uvx",
+            "args": [
+                "--python",
+                ">=3.11",
+                "coplay-mcp-server@latest"
+            ]
+        }
+    }
+}

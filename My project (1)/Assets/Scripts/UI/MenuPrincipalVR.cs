@@ -1,167 +1,158 @@
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Controlador del menú principal VR
-/// Permite iniciar el juego y ajustar configuraciones
+/// Maneja la navegación entre menú y sesión de juego
 /// </summary>
 public class MenuPrincipalVR : MonoBehaviour
 {
     [Header("Referencias UI")]
-    [SerializeField] private GameObject panelMenuPrincipal;
-    [SerializeField] private GameObject panelConfiguracion;
-    [SerializeField] private Button botonIniciarJuego;
-    [SerializeField] private Button botonConfiguracion;
-    [SerializeField] private Button botonVolverConfig;
+    [SerializeField] private GameObject menuCanvas;
+    [SerializeField] private GameObject canvasMetricas;
     
-    [Header("Configuración de Sensibilidad")]
-    [SerializeField] private Slider sliderSensibilidad;
-    [SerializeField] private Text textoSensibilidad;
-    [SerializeField] private float sensibilidadMinima = 0.5f;
-    [SerializeField] private float sensibilidadMaxima = 3f;
-    [SerializeField] private float sensibilidadDefault = 1f;
+    [Header("Detección de Grips para Volver al Menú")]
+    [SerializeField] private InputActionProperty gripIzquierdo;
+    [SerializeField] private InputActionProperty gripDerecho;
+    [SerializeField] private float tiempoPresionRequerido = 2.0f;
     
-    [Header("Referencias de Juego")]
-    [SerializeField] private SesionVR sesionVR;
-    [SerializeField] private GameObject canvasJuego;
-    
-    private float sensibilidadActual;
+    private float tiempoPresionando = 0f;
+    private bool menuActivo = true;
     
     private void Start()
     {
-        // Configurar botones
-        if (botonIniciarJuego != null)
-            botonIniciarJuego.onClick.AddListener(IniciarJuego);
+        // Mostrar menú al inicio
+        MostrarMenu();
         
-        if (botonConfiguracion != null)
-            botonConfiguracion.onClick.AddListener(AbrirConfiguracion);
-        
-        if (botonVolverConfig != null)
-            botonVolverConfig.onClick.AddListener(VolverAlMenuPrincipal);
-        
-        // Configurar slider de sensibilidad
-        if (sliderSensibilidad != null)
+        // Ocultar canvas de métricas al inicio
+        if (canvasMetricas != null)
         {
-            sliderSensibilidad.minValue = sensibilidadMinima;
-            sliderSensibilidad.maxValue = sensibilidadMaxima;
-            sliderSensibilidad.value = sensibilidadDefault;
-            sliderSensibilidad.onValueChanged.AddListener(OnSensibilidadCambiada);
+            canvasMetricas.SetActive(false);
         }
         
-        // Cargar sensibilidad guardada
-        sensibilidadActual = PlayerPrefs.GetFloat("Sensibilidad", sensibilidadDefault);
-        if (sliderSensibilidad != null)
-            sliderSensibilidad.value = sensibilidadActual;
-        
-        ActualizarTextoSensibilidad();
-        
-        // Mostrar menú principal al inicio
-        MostrarMenuPrincipal();
+        Debug.Log("[MenuPrincipalVR] Menú inicializado");
+    }
+    
+    private void Update()
+    {
+        // Solo detectar grips si el menú NO está activo (durante la sesión)
+        if (!menuActivo)
+        {
+            DetectarCombinacionGrips();
+        }
     }
     
     /// <summary>
-    /// Inicia el juego y oculta el menú
+    /// Detecta si ambos grips están presionados simultáneamente
     /// </summary>
-    public void IniciarJuego()
+    private void DetectarCombinacionGrips()
     {
-        Debug.Log("[MenuPrincipal] Iniciando juego...");
+        bool gripIzqPresionado = gripIzquierdo.action?.ReadValue<float>() > 0.5f;
+        bool gripDerPresionado = gripDerecho.action?.ReadValue<float>() > 0.5f;
         
-        // Ocultar menú
-        if (panelMenuPrincipal != null)
-            panelMenuPrincipal.SetActive(false);
-        
-        if (panelConfiguracion != null)
-            panelConfiguracion.SetActive(false);
-        
-        // Mostrar UI del juego
-        if (canvasJuego != null)
-            canvasJuego.SetActive(true);
-        
-        // Iniciar sesión VR
-        if (sesionVR != null)
+        if (gripIzqPresionado && gripDerPresionado)
         {
-            sesionVR.IniciarSesion();
+            tiempoPresionando += Time.deltaTime;
+            
+            if (tiempoPresionando >= tiempoPresionRequerido)
+            {
+                Debug.Log("[MenuPrincipalVR] Combinación de grips detectada - Volviendo al menú");
+                VolverAlMenu();
+                tiempoPresionando = 0f;
+            }
         }
         else
         {
-            Debug.LogError("[MenuPrincipal] SesionVR no asignada!");
+            tiempoPresionando = 0f;
         }
     }
     
     /// <summary>
-    /// Abre el panel de configuración
+    /// Inicia la sesión de entrenamiento (llamado desde el botón)
     /// </summary>
-    public void AbrirConfiguracion()
+    public void IniciarSesion()
     {
-        Debug.Log("[MenuPrincipal] Abriendo configuración...");
+        Debug.Log("[MenuPrincipalVR] Iniciando sesión...");
         
-        if (panelMenuPrincipal != null)
-            panelMenuPrincipal.SetActive(false);
-        
-        if (panelConfiguracion != null)
-            panelConfiguracion.SetActive(true);
-    }
-    
-    /// <summary>
-    /// Vuelve al menú principal desde configuración
-    /// </summary>
-    public void VolverAlMenuPrincipal()
-    {
-        Debug.Log("[MenuPrincipal] Volviendo al menú principal...");
-        
-        if (panelConfiguracion != null)
-            panelConfiguracion.SetActive(false);
-        
-        if (panelMenuPrincipal != null)
-            panelMenuPrincipal.SetActive(true);
-    }
-    
-    /// <summary>
-    /// Muestra el menú principal (útil para volver desde el juego)
-    /// </summary>
-    public void MostrarMenuPrincipal()
-    {
-        if (panelMenuPrincipal != null)
-            panelMenuPrincipal.SetActive(true);
-        
-        if (panelConfiguracion != null)
-            panelConfiguracion.SetActive(false);
-        
-        if (canvasJuego != null)
-            canvasJuego.SetActive(false);
-    }
-    
-    /// <summary>
-    /// Callback cuando cambia el slider de sensibilidad
-    /// </summary>
-    private void OnSensibilidadCambiada(float valor)
-    {
-        sensibilidadActual = valor;
-        ActualizarTextoSensibilidad();
-        
-        // Guardar en PlayerPrefs
-        PlayerPrefs.SetFloat("Sensibilidad", sensibilidadActual);
-        PlayerPrefs.Save();
-        
-        Debug.Log($"[MenuPrincipal] Sensibilidad ajustada a: {sensibilidadActual:F2}");
-    }
-    
-    /// <summary>
-    /// Actualiza el texto que muestra el valor de sensibilidad
-    /// </summary>
-    private void ActualizarTextoSensibilidad()
-    {
-        if (textoSensibilidad != null)
+        // Ocultar menú
+        if (menuCanvas != null)
         {
-            textoSensibilidad.text = $"Sensibilidad: {sensibilidadActual:F2}x";
+            menuCanvas.SetActive(false);
         }
+        
+        // Mostrar canvas de métricas
+        if (canvasMetricas != null)
+        {
+            canvasMetricas.SetActive(true);
+        }
+        
+        // Iniciar sesión VR
+        if (SesionVR.Instance != null)
+        {
+            SesionVR.Instance.IniciarSesion();
+        }
+        else
+        {
+            Debug.LogError("[MenuPrincipalVR] No se encontró SesionVR.Instance");
+        }
+        
+        menuActivo = false;
     }
     
     /// <summary>
-    /// Obtiene la sensibilidad actual configurada
+    /// Vuelve al menú principal (detiene la sesión)
     /// </summary>
-    public float ObtenerSensibilidad()
+    public void VolverAlMenu()
     {
-        return sensibilidadActual;
+        Debug.Log("[MenuPrincipalVR] Volviendo al menú...");
+        
+        // Detener sesión (esto exportará el CSV automáticamente)
+        if (SesionVR.Instance != null)
+        {
+            SesionVR.Instance.DetenerSesion();
+        }
+        
+        // Ocultar canvas de métricas
+        if (canvasMetricas != null)
+        {
+            canvasMetricas.SetActive(false);
+        }
+        
+        // Mostrar menú
+        MostrarMenu();
+    }
+    
+    /// <summary>
+    /// Muestra el menú principal
+    /// </summary>
+    private void MostrarMenu()
+    {
+        if (menuCanvas != null)
+        {
+            menuCanvas.SetActive(true);
+        }
+        
+        menuActivo = true;
+        Debug.Log("[MenuPrincipalVR] Menú mostrado");
+    }
+    
+    /// <summary>
+    /// Cierra la aplicación (llamado desde el botón)
+    /// </summary>
+    public void SalirAplicacion()
+    {
+        Debug.Log("[MenuPrincipalVR] Saliendo de la aplicación...");
+        
+        // Detener sesión si está activa
+        if (SesionVR.Instance != null && !menuActivo)
+        {
+            SesionVR.Instance.DetenerSesion();
+        }
+        
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        Application.Quit();
+        #endif
     }
 }
